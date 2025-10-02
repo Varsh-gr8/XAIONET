@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XAIONET Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------- */
+/* GLOBAL STYLES (New Dark Theme) */
+/* ------------------------------------------------------------------- */
+body {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  /* Deep Indigo/Purple Gradient Background (Updated for higher visibility) */
+  background: linear-gradient(135deg, #281056 0%, #4A248A 100%);
+  /* Subtle dark texture dots (Opacity reduced to 0.01) */
+  background-image: 
+      radial-gradient(circle at 25% 25%, rgba(255,255,255,0.01) 1px, transparent 1px),
+      radial-gradient(circle at 75% 75%, rgba(255,255,255,0.01) 1px, transparent 1px);
+  background-size: 50px 50px;
+  color: #E2E8F0; /* Light text for dark background */
+}
+
+/* Page title: use a bright Teal color */
+h2 {
+  text-align:center;
+  margin: 20px 0;
+  font-weight:700;
+  color: #fff; /* Teal accent */
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+/* Container cards: slightly lighter dark gray for contrast */
+.stat-card, .spark-card, .chart-container {
+  background: rgba(30,41,59,0.9); /* #1E293B equivalent - dark slate */
+  color: #ffffff; 
+  border: 1px solid rgba(45,62,80, 0.5); /* Subtle border */
+  border-radius: 16px;
+}
+
+/* Values (like CPU %, Bandwidth MB) */
+.stat-card .value {
+  color: #84CC16; /* Bright Lime Green for values */
+  font-size: 1.5em;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------- */
+/* CONTROLS PANEL (Enhanced Inputs) */
+/* ------------------------------------------------------------------- */
+#controls-panel {
+  display: flex;
+  flex-wrap: wrap; /* Added for mobile responsiveness */
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin: 20px auto;
+  padding: 15px;
+  background: rgba(30,30,45,0.9); /* Dark control bar */
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  max-width: 800px;
+}
+#controls-panel input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 2px solid #5A6A80; /* Subtle border */
+  background: #0F172A; /* Match body for deep look */
+  color: #fff;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  width: 120px;
+}
+#controls-panel input:focus {
+  border-color: #2DD4BF; /* Teal focus accent */
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.6);
+}
+#controls-panel label {
+  font-weight: 500;
+}
+#ovr {
+  background-color: #F97316 !important; /* Orange accent */
+  color: #0F172A !important;
+  padding: 8px 15px !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.1s;
+  font-size: 1em !important;
+  font-weight: bold;
+}
+#ovr:hover {
+  background-color: #E06C12 !important;
+  transform: translateY(-2px);
+}
+/* General button styling from previous version needs override */
+#controls button {
+  padding:6px 12px;
+  margin:0 5px;
+  border-radius:4px;
+  border:none;
+  outline:none;
+  font-weight:bold;
+}
+
+
+/* ------------------------------------------------------------------- */
+/* CHART & FEED STYLES (Adjusted for new theme) */
+/* ------------------------------------------------------------------- */
+/* Gauges & stat cards */
+#top-stats {
+  display:flex;
+  flex-wrap: wrap;
+  justify-content:center;
+  gap:50px;
+  margin: 20px auto;
+  max-width: 1200px;
+}
+.stat-card {
+  padding:15px 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+  width:220px;
+  text-align:center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.8);
+}
+.stat-card h4 { margin:0; font-weight:700; color:#fff; }
+
+/* Sparkline cards */
+#sparklines {
+  display:flex;
+  flex-wrap: wrap;
+  justify-content:center;
+  gap:50px;
+  margin-top:20px;
+}
+.spark-card {
+  padding:15px 20px;
+  width:250px;
+  text-align:center;
+  box-shadow:0 10px 25px rgba(0,0,0,0.7);
+}
+
+/* Main charts */
+.charts {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:30px;
+  margin-top:30px;
+  padding: 0 10px; /* Add padding for smaller screens */
+}
+.chart-container {
+  padding:20px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.7);
+  width: 100%; /* Default to full width on small screens */
+  max-width: 450px; /* Max width on large screens */
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.chart-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 35px rgba(0,0,0,0.8);
+}
+
+@media (min-width: 768px) {
+    /* For tablets and desktops, allow two charts side by side */
+    .chart-container {
+        width: 450px;
+    }
+}
+
+canvas {
+  width:100% !important;
+  height:300px !important;
+  background-color: transparent; /* Charts have their own background/fill */
+  border-radius: 12px;
+}
+
+/* Feed section */
+#feed {
+  max-width: 1200px;
+  margin: 20px auto;
+  max-height: 400px; /* Limits the height of the feed */
+  overflow-y: auto; /* Enables scrolling */
+  padding: 0 10px;
+}
+.item {
+  padding:12px;
+  margin-bottom:10px;
+  background: rgba(50,50,70,0.7);
+  border-left: 5px solid #F97316; /* Orange accent border */
+  border-radius:8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+.hp {
+  color: #0F172A; /* Slate text on badge */
+  background: #EF4444; /* Brighter Red for HIGH priority */
+  padding: 2px 6px;
+  border-radius:4px;
+  margin-left:8px;
+  font-weight:bold;
+  font-size: 0.8em;
+}
+
+/* Responsive adjustment for input fields */
+@media (max-width: 600px) {
+    #controls-panel {
+        flex-direction: column;
+        gap: 10px;
+    }
+    #controls-panel input, #controls-panel button {
+        width: 90%;
+        max-width: 300px;
+    }
+}
+</style>
+</head>
+<body>
+
+<h2>XAIONET — Live System & Semantic Flow Dashboard</h2>
+
+<div id="controls-panel">
+  <label for="sid">Session ID:</label>
+  <input id="sid" placeholder="call1" value="call1"/>
+  <label for="prio">Priority:</label>
+  <input id="prio" placeholder="10" value="10"/>
+  <button id="ovr">Set Override</button>
+</div>
+
+
+<div id="top-stats">
+  <div class="stat-card">
+    <h4>CPU Usage</h4>
+    <canvas id="cpuGauge" height="120"></canvas>
+    <div class="value" id="cpuValue">0%</div>
+  </div>
+  <div class="stat-card">
+    <h4>Bandwidth</h4>
+    <canvas id="bwGauge" height="120"></canvas>
+    <div class="value" id="bwValue">0 MB</div>
+  </div>
+</div>
+
+<div id="sparklines">
+  <div class="spark-card">
+    <h4>CPU Sparkline (Last 20)</h4>
+    <canvas id="cpuSpark" height="80"></canvas>
+  </div>
+  <div class="spark-card">
+    <h4>Bandwidth Sparkline (Last 20)</h4>
+    <canvas id="bwSpark" height="80"></canvas>
+  </div>
+</div>
+
+<div class="charts">
+  <div class="chart-container">
+    <h4>CPU Usage (%) - History</h4>
+    <canvas id="cpuChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <h4>Bandwidth (MB) - History</h4>
+    <canvas id="bwChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <h4>Priority Distribution (Last 20)</h4>
+    <canvas id="prioChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <h4>Sentiment Distribution (Last 20)</h4>
+    <canvas id="sentChart"></canvas>
+  </div>
+</div>
+
+<div id="feed"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const socket = io();
+const feed = document.getElementById('feed');
+const cpuValue = document.getElementById('cpuValue');
+const bwValue = document.getElementById('bwValue');
+
+// --- Configuration for real-time sliding windows ---
+const CHART_WINDOW_SIZE = 10; // For main line/bar charts (Time-series)
+const DISTRO_WINDOW_SIZE = 20; // For distribution charts (Priority/Sentiment)
+
+// History arrays for distribution charts (stores category of last N events)
+let priorityHistory = []; // Stores: 'low', 'medium', 'high'
+let sentimentHistory = []; // Stores: 'pos', 'neu', 'neg'
+
+// --- Chart.js Global Configuration (Added for better dark theme compatibility) ---
+Chart.defaults.color = '#E2E8F0'; // Default text color for labels, tooltips, etc.
+Chart.defaults.borderColor = 'rgba(255,255,255,0.1)'; // Default grid line color
+
+// --- Gauge helper ---
+function createGauge(ctx, max, color) {
+  return new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Used', 'Unused'],
+      datasets: [{
+        data: [0, max],
+        backgroundColor: [color, 'rgba(255,255,255,0.1)'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      rotation: -90,
+      circumference: 180,
+      cutout: '70%',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
+
+const cpuGaugeCtx = document.getElementById('cpuGauge').getContext('2d');
+const bwGaugeCtx = document.getElementById('bwGauge').getContext('2d');
+const cpuGauge = createGauge(cpuGaugeCtx, 100, '#F97316'); // Orange accent for CPU
+const bwGauge = createGauge(bwGaugeCtx, 100, '#2DD4BF'); // Teal accent for Bandwidth
+
+function updateGauge(gauge, value, max) {
+  if (gauge) { // Add a check to ensure the gauge object exists
+      gauge.data.datasets[0].data[0] = value;
+      gauge.data.datasets[0].data[1] = max - value;
+      gauge.update();
+  }
+}
+
+// --- Sparklines ---
+const cpuSparkCtx = document.getElementById('cpuSpark').getContext('2d');
+const bwSparkCtx = document.getElementById('bwSpark').getContext('2d');
+const cpuSpark = new Chart(cpuSparkCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [{
+      data: [],
+      borderColor: '#F97316',
+      backgroundColor: 'rgba(249,115,22,0.3)',
+      fill: true,
+      tension: 0.3
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: { x: { display: false }, y: { display: false } },
+    maintainAspectRatio: false
+  }
+});
+const bwSpark = new Chart(bwSparkCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [{
+      data: [],
+      borderColor: '#2DD4BF',
+      backgroundColor: 'rgba(45,212,191,0.2)',
+      fill: true,
+      tension: 0.3
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: { x: { display: false }, y: { display: false } },
+    maintainAspectRatio: false
+  }
+});
+
+// --- Main charts ---
+const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+const bwCtx = document.getElementById('bwChart').getContext('2d');
+const prioCtx = document.getElementById('prioChart').getContext('2d');
+const sentCtx = document.getElementById('sentChart').getContext('2d');
+
+const cpuGradient = cpuCtx.createLinearGradient(0, 0, 0, 300);
+cpuGradient.addColorStop(0, 'rgba(249,115,22,0.6)');
+cpuGradient.addColorStop(1, 'rgba(249,115,22,0.1)'); // Orange Gradient
+const bwGradient = bwCtx.createLinearGradient(0, 0, 0, 300);
+bwGradient.addColorStop(0, 'rgba(45,212,191,0.6)');
+bwGradient.addColorStop(1, 'rgba(45,212,191,0.1)'); // Teal Gradient
+
+const cpuChart = new Chart(cpuCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [{
+      label: 'CPU %',
+      data: [],
+      borderColor: '#F97316',
+      backgroundColor: cpuGradient,
+      tension: 0.3,
+      fill: true
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        labels: { color: '#E2E8F0' }
+      }
+    },
+    scales: {
+      y: {
+        min: 0,
+        max: 100,
+        ticks: { color: '#E2E8F0' },
+        grid: { color: 'rgba(255,255,255,0.1)' }
+      },
+      x: {
+        ticks: { color: '#E2E8F0' },
+        grid: { color: 'rgba(255,255,255,0.05)' }
+      }
+    }
+  }
+});
+
+const bwChart = new Chart(bwCtx, {
+  type: 'bar',
+  data: {
+    labels: [],
+    datasets: [{
+      label: 'Bandwidth MB',
+      data: [],
+      backgroundColor: bwGradient,
+      borderColor: '#2DD4BF',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        labels: { color: '#E2E8F0' }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { color: '#E2E8F0' },
+        grid: { color: 'rgba(255,255,255,0.1)' }
+      },
+      x: {
+        ticks: { color: '#E2E8F0' },
+        grid: { color: 'rgba(255,255,255,0.05)' }
+      }
+    }
+  }
+});
+
+const prioChart = new Chart(prioCtx, {
+  type: 'pie',
+  data: {
+    labels: ['Low (1-4)', 'Medium (5-7)', 'High (8-10)'],
+    datasets: [{
+      data: [1, 1, 1], // Initial non-zero data to prevent Chart.js sizing issue
+      backgroundColor: ['#2DD4BF', '#F97316', '#EF4444']
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: '#E2E8F0' } }
+    }
+  }
+}); // Teal, Orange, Red
+
+const sentChart = new Chart(sentCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Positive', 'Neutral', 'Negative'],
+    datasets: [{
+      data: [1, 1, 1], // Initial non-zero data to prevent Chart.js sizing issue
+      backgroundColor: ['#84CC16', '#FBBF24', '#EF4444']
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: '#E2E8F0' } }
+    }
+  }
+}); // Lime, Amber (Neutral), Red
+
+
+/**
+ * Function to update Priority and Sentiment distribution charts based on the
+ * sliding history arrays (DISTRO_WINDOW_SIZE).
+ */
+function updateDistributionCharts() {
+    // 1. Calculate Priority Counts
+    const prioCounts = { low: 0, medium: 0, high: 0 };
+    priorityHistory.forEach(p => prioCounts[p]++);
+    
+    // Check if total count is zero to avoid showing initial 1,1,1
+    const totalPrio = prioCounts.low + prioCounts.medium + prioCounts.high;
+    
+    prioChart.data.datasets[0].data = [
+        prioCounts.low, 
+        prioCounts.medium, 
+        prioCounts.high
+    ];
+    prioChart.update();
+
+    // 2. Calculate Sentiment Counts
+    const sentCounts = { pos: 0, neu: 0, neg: 0 };
+    sentimentHistory.forEach(s => sentCounts[s]++);
+    
+    // Check if total count is zero to avoid showing initial 1,1,1
+    const totalSent = sentCounts.pos + sentCounts.neu + sentCounts.neg;
+    
+    sentChart.data.datasets[0].data = [
+        sentCounts.pos,
+        sentCounts.neu,
+        sentCounts.neg
+    ];
+    sentChart.update();
+}
+
+// --- Socket updates ---
+socket.on('update', data => {
+  const el = document.createElement('div');
+  el.className = 'item';
+  const badge = data.priority >= 8 ? '<span class="hp">HIGH</span>' : '';
+  const captureTime = new Date((data.capture_ts || data.forward_ts) * 1000).toLocaleTimeString();
+  
+  el.innerHTML = `<b>${captureTime}</b> [${data.session_id}] ${badge}<div>${data.text||'No text'}</div><small>sentiment:${data.sentiment||'neutral'} priority:${data.priority||0} CPU:${data.cpu||0}% BW:${data.bandwidth||0}MB</small>`;
+  feed.prepend(el);
+
+  // Keep feed from growing infinitely (e.g., max 50 items)
+  if (feed.children.length > 50) {
+      feed.removeChild(feed.lastChild);
+  }
+
+  const time = new Date().toLocaleTimeString();
+  // Ensure that if data.cpu/data.bandwidth are missing or non-numeric, they default to 0
+  const cpu = parseFloat(data.cpu) || 0; 
+  const bandwidth = parseFloat(data.bandwidth) || 0;
+
+  // Update gauges (This is the section responsible for the gauge update)
+  //cpuValue.textContent = `${cpu.toFixed(1)}%`; 
+  //bwValue.textContent = `${bandwidth.toFixed(1)} MB`;
+  //updateGauge(cpuGauge, cpu, 100);
+  //updateGauge(bwGauge, bandwidth, 100);
+
+  // Update main charts (CPU & BW) - Sliding window of CHART_WINDOW_SIZE
+  cpuChart.data.labels.push(time);
+  cpuChart.data.datasets[0].data.push(cpu);
+  if (cpuChart.data.labels.length > CHART_WINDOW_SIZE) {
+    cpuChart.data.labels.shift();
+    cpuChart.data.datasets[0].data.shift();
+  }
+  cpuChart.update();
+
+  bwChart.data.labels.push(time);
+  bwChart.data.datasets[0].data.push(bandwidth);
+  if (bwChart.data.labels.length > CHART_WINDOW_SIZE) {
+    bwChart.data.labels.shift();
+    bwChart.data.datasets[0].data.shift();
+  }
+  bwChart.update();
+
+  // --- REAL-TIME DISTRIBUTION LOGIC START ---
+
+  // 1. Update Priority History (Sliding Window)
+  let newPriorityCategory = 'low';
+  if (data.priority >= 8) newPriorityCategory = 'high';
+  else if (data.priority >= 5) newPriorityCategory = 'medium';
+  priorityHistory.push(newPriorityCategory);
+  if (priorityHistory.length > DISTRO_WINDOW_SIZE) {
+    priorityHistory.shift();
+  }
+
+  // 2. Update Sentiment History (Sliding Window)
+  const sentiment = (data.sentiment || '').toLowerCase();
+  let newSentimentCategory = 'neu';
+  if (sentiment.includes('positive')) newSentimentCategory = 'pos';
+  else if (sentiment.includes('negative')) newSentimentCategory = 'neg';
+  sentimentHistory.push(newSentimentCategory);
+  if (sentimentHistory.length > DISTRO_WINDOW_SIZE) {
+    sentimentHistory.shift();
+  }
+
+  // 3. Update distribution charts based on the sliding windows
+  updateDistributionCharts();
+
+  // --- REAL-TIME DISTRIBUTION LOGIC END ---
+
+  // Update sparklines - Sliding window of 20
+  cpuSpark.data.labels.push(time);
+  cpuSpark.data.datasets[0].data.push(cpu);
+  if (cpuSpark.data.labels.length > 20) {
+    cpuSpark.data.labels.shift();
+    cpuSpark.data.datasets[0].data.shift();
+  }
+  cpuSpark.update('none');
+
+  bwSpark.data.labels.push(time);
+  bwSpark.data.datasets[0].data.push(bandwidth);
+  if (bwSpark.data.labels.length > 20) {
+    bwSpark.data.labels.shift();
+    bwSpark.data.datasets[0].data.shift();
+  }
+  bwSpark.update('none');
+});
+
+// --- Manual override ---
+document.getElementById('ovr').onclick = async () => {
+  const sid = document.getElementById('sid').value || 'call1';
+  const pr = parseInt(document.getElementById('prio').value || '10');
+  try {
+    // Custom modal/message box
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = 'position:fixed; top:20px; right:20px; background:#F97316; color:#0F172A; padding:15px; border-radius:8px; z-index:1000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-weight:bold;';
+    messageDiv.textContent = `Sending override for [${sid}]...`;
+    document.body.appendChild(messageDiv);
+
+    const r = await fetch('/override', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        session_id: sid,
+        priority: pr
+      })
+    });
+    const j = await r.json();
+
+    messageDiv.style.background = r.ok ? '#84CC16' : '#EF4444';
+    messageDiv.textContent = r.ok ? `Override Success: ${JSON.stringify(j)}` : `Override Failed: ${j.error || r.statusText}`;
+
+    setTimeout(() => messageDiv.remove(), 4000); // Remove after 4 seconds
+  } catch (e) {
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = 'position:fixed; top:20px; right:20px; background:#EF4444; color:white; padding:15px; border-radius:8px; z-index:1000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-weight:bold;';
+    messageDiv.textContent = `Connection Error: ${e.message}`;
+    document.body.appendChild(messageDiv);
+    setTimeout(() => messageDiv.remove(), 4000);
+  }
+};
+// ---- Native Browser Demo CPU/Bandwidth (Replace real sources as needed) ----
+function randomRange(a, b) {
+  return a + Math.random() * (b - a);
+}
+
+function updateNativeSystemStats() {
+  // Simulate CPU as a fluctuating value between 15% and 45%.
+  const cpu = randomRange(15, 45);
+  // Bandwidth as a fluctuating value between 0.9 and 8.5 MB
+  const bw = randomRange(0.9, 8.5);
+
+  cpuValue.textContent = `${cpu.toFixed(1)}%`;
+  bwValue.textContent = `${bw.toFixed(2)} MB`;
+  updateGauge(cpuGauge, cpu, 100);
+  updateGauge(bwGauge, bw, 100);
+
+  setTimeout(updateNativeSystemStats, 1000); // Repeat every second
+}
+updateNativeSystemStats();
+</script>
+</body>
+</html>
+
