@@ -1,0 +1,15 @@
+openai-whisper
+sounddevice
+soundfile
+websockets
+flask
+flask-socketio
+requests
+pyttsx3
+textblob
+vaderSentiment
+sqlalchemy
+# optional
+faster-whisper
+coqui-tts
+
